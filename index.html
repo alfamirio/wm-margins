@@ -127,6 +127,7 @@
     <div class="controls">
         <label>Amount: <input type="number" id="numImages" value="60" min="1"></label>
         <label>Size (px): <input type="number" id="size" value="100" min="50"></label>
+        <label>Repetitions (n): <input type="number" id="numRepeats" value="5" min="1" max="10"></label>
         <button id="btnGenerate">1. Generate Shapes</button>
         <button id="btnCombine" disabled>2. Combine Selected</button>
         <a id="btnDownload" class="btn btn-download" style="display:none;">3. Download Composition</a>
@@ -134,7 +135,7 @@
 
     <div class="main-layout">
         <div class="left-column">
-            <h2>Generated Shapes (Select up to 3)</h2>
+            <h2>Generated Shapes (Select 1 shape to repeat)</h2>
             <div id="gallery" class="gallery"></div>
         </div>
 
@@ -152,6 +153,10 @@
 
         document.getElementById('btnGenerate').addEventListener('click', generateShapes);
         document.getElementById('btnCombine').addEventListener('click', combineShapes);
+        document.getElementById('numRepeats').addEventListener('change', (e) => {
+            const v = Math.min(10, Math.max(1, parseInt(e.target.value) || 5));
+            e.target.value = v;
+        });
 
         function randomRGB() {
             return { r: Math.floor(Math.random() * 256), g: Math.floor(Math.random() * 256), b: Math.floor(Math.random() * 256) };
@@ -237,7 +242,9 @@
                 canvas.classList.remove('selected');
                 selectedCanvases = selectedCanvases.filter(c => c !== canvas);
             } else {
-                if (selectedCanvases.length >= 3) return;
+                // Only one shape can be selected at a time
+                selectedCanvases.forEach(c => c.classList.remove('selected'));
+                selectedCanvases = [];
                 canvas.classList.add('selected');
                 selectedCanvases.push(canvas);
             }
@@ -245,12 +252,25 @@
         }
 
         function combineShapes() {
-            const imgW = selectedCanvases[0].width;
-            const imgH = selectedCanvases[0].height;
-            
-            const y2 = Math.floor((877 * imgW) / imgH);
-            const y3 = Math.floor((1754 * imgW) / imgH);
-            const totalH = Math.floor((2000 * imgW) / imgH);
+            const nRaw = parseInt(document.getElementById('numRepeats').value);
+            const n = Math.min(10, Math.max(1, isNaN(nRaw) ? 5 : nRaw));
+
+            const img = selectedCanvases[0];
+            const imgW = img.width;
+            const imgH = img.height;
+
+            // Base height of the margin strip (kept proportional to the A4-margin look of the original).
+            let totalH = Math.floor(2000 * imgW / imgH);
+
+            // Ensure there's always room for n shapes plus gaps, growing the strip if needed.
+            const minGap = Math.max(10, imgH * 0.1);
+            const gapCount = Math.max(1, n - 1);
+            const minTotalH = Math.ceil(n * imgH + (n - 1) * minGap);
+            totalH = Math.max(totalH, minTotalH);
+
+            // First shape pinned to the top, last shape pinned to the bottom,
+            // remaining shapes evenly spaced in between.
+            const gap = (totalH - n * imgH) / gapCount;
 
             const mainCanvas = document.getElementById('canvasCombine');
             mainCanvas.width = imgW;
@@ -258,16 +278,15 @@
             const ctx = mainCanvas.getContext('2d');
             ctx.clearRect(0, 0, imgW, totalH);
 
-            const img1 = selectedCanvases[0];
-            const img2 = selectedCanvases[1] || img1;
-            const img3 = selectedCanvases[2] || img1;
-
-            ctx.drawImage(img1, 0, 0);
-            ctx.drawImage(img2, 0, y2);
-            ctx.drawImage(img3, 0, y3);
+            for (let i = 0; i < n; i++) {
+                const y = n === 1
+                    ? Math.round((totalH - imgH) / 2)
+                    : Math.round(i * (imgH + gap));
+                ctx.drawImage(img, 0, y);
+            }
 
             mainCanvas.style.display = "block";
-            
+
             const downloadBtn = document.getElementById('btnDownload');
             downloadBtn.href = mainCanvas.toDataURL("image/png");
             downloadBtn.download = "composition.png";

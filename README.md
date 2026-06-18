@@ -4,7 +4,7 @@ An open-source, client-side web application designed for instructors and compute
 
 ## Project Purpose
 
-When managing multiple examination groups or shuffling test variations, keeping track of papers can become difficult. This tool automates the creation of distinct visual watermarks that fit into standard A4 page margins (top, middle, and bottom positions). 
+When managing multiple examination groups or shuffling test variations, keeping track of papers can become difficult. This tool automates the creation of distinct visual watermarks that fit into standard A4 page margins, repeating a single chosen shape a configurable number of times (1–10), evenly distributed down the margin.
 
 By using randomized geometric shapes, background colors, and dynamic numbers, each exam variation gets a highly identifiable visual signature that can be recognized at a glance during proctoring.
 
@@ -32,12 +32,13 @@ The generated composition is an elongated vertical PNG layout with a transparent
 - **100% Client-Side:** No server, database, or backend installation required. Powered entirely by HTML5 Canvas and JavaScript.
 - **Randomized Asset Generation:** Generates a custom amount of shapes (circles, triangles, pentagons, stars, etc.) with random backgrounds and high-contrast labels.
 - **Dynamic Proportions:** Adapts calculations dynamically to match your required pixel sizing while keeping original canvas geometry.
-- **Interactive Multi-Selection:** Select up to 3 generated assets to build a continuous vertical margin layout.
+- **Single-Shape Repetition:** Select one generated shape and choose how many times (1–10) to repeat it, evenly spaced, to build a continuous vertical margin layout.
 - **Instant Download:** Merges selections instantly onto a high-resolution transparent PNG layout ready to be imported into your LaTeX, Typst, MS Word, or Google Docs templates.
 
 ## Usage Instructions
 
 1. **Generate Shapes:** Enter your desired batch amount and pixel size constraint, then click **1. Generate Shapes**.
-2. **Select Margins:** Click on the generated boxes within the gallery layout (up to 3 items). Your selections will be highlighted.
-3. **Render Composition:** Click **2. Combine Selected**. Your vertical sheet margin will immediately render in the right-side preview column.
-4. **Export:** Click the green **3. Download Composition** button to export your final watermark sequence as a transparent `.png` file.
+2. **Select a Shape:** Click on one generated box within the gallery layout. Your selection will be highlighted.
+3. **Set Repetitions:** Enter how many times (1–10) the selected shape should repeat in the **Repetitions (n)** field. The default is 5.
+4. **Render Composition:** Click **2. Combine Selected**. The shape will be evenly distributed down a vertical margin layout, rendered instantly in the right-side preview column.
+5. **Export:** Click the green **3. Download Composition** button to export your final watermark sequence as a transparent `.png` file.
