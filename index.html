@@ -125,8 +125,8 @@
         </div>
 
     <div class="controls">
-        <label>Amount: <input type="number" id="numImages" value="30" min="1"></label>
-        <label>Size (px): <input type="number" id="size" value="200" min="50"></label>
+        <label>Amount: <input type="number" id="numImages" value="60" min="1"></label>
+        <label>Size (px): <input type="number" id="size" value="100" min="50"></label>
         <button id="btnGenerate">1. Generate Shapes</button>
         <button id="btnCombine" disabled>2. Combine Selected</button>
         <a id="btnDownload" class="btn btn-download" style="display:none;">3. Download Composition</a>
@@ -250,7 +250,7 @@
             
             const y2 = Math.floor((877 * imgW) / imgH);
             const y3 = Math.floor((1754 * imgW) / imgH);
-            const totalH = Math.floor((2054 * imgW) / imgH);
+            const totalH = Math.floor((2000 * imgW) / imgH);
 
             const mainCanvas = document.getElementById('canvasCombine');
             mainCanvas.width = imgW;
