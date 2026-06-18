@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Generator and Combiner</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #f4f4f9; 
+            color: #333; 
+            box-sizing: border-box;
+        }
+        h1 { margin-top: 0; }
+        
+        /* Purpose Description Banner */
+        .purpose-banner {
+            background: #e9ecef;
+            border-left: 5px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .purpose-banner p {
+            margin: 0;
+            font-style: italic;
+            color: #495057;
+            line-height: 1.5;
+        }
+
+        /* Top Controls */
+        .controls { 
+            display: flex; 
+            gap: 15px; 
+            margin-bottom: 20px; 
+            align-items: center; 
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        input { width: 70px; padding: 6px; }
+        button, .btn { 
+            padding: 8px 15px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            font-weight: bold;
+        }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-download { background: #28a745; }
+        .btn-download:hover { background: #218838; }
+
+        /* 80% / 20% Two-Column Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 80% 20%;
+            gap: 20px;
+        }
+
+        /* Left Column */
+        .left-column h2 { margin-top: 0; }
+        .gallery { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+            min-height: 200px; 
+            border: 2px dashed #bbb; 
+            padding: 15px; 
+            background: #fff; 
+            border-radius: 6px;
+        }
+        .gallery canvas { 
+            border: 2px solid transparent; 
+            cursor: pointer; 
+            transition: transform 0.2s, border-color 0.2s; 
+            max-width: 100%;
+            height: auto;
+        }
+        .gallery canvas.selected { 
+            border-color: #ff4757; 
+            transform: scale(0.95); 
+            box-shadow: 0 0 10px rgba(255,71,87,0.5); 
+        }
+
+        /* Right Column */
+        .right-column {
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .right-column h2 { margin-top: 0; font-size: 1.1rem; text-align: center; }
+        
+        .result-container { 
+            text-align: center; 
+            width: 100%;
+            margin-top: 15px;
+        }
+        canvas#canvasCombine {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            display: block;
+            margin: 0 auto;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect width="10" height="10" fill="%23eee"/><rect x="10" y="10" width="10" height="10" fill="%23eee"/></svg>');
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Shape Generator and Combiner</h1>
+    
+    <div class="purpose-banner">
+            <p><strong>Project Purpose:</strong> This tool generates distinct, randomized watermarks for page margins to assist instructors in proctoring and maintaining control over exams.</p>
+        </div>
+
+    <div class="controls">
+        <label>Amount: <input type="number" id="numImages" value="30" min="1"></label>
+        <label>Size (px): <input type="number" id="size" value="200" min="50"></label>
+        <button id="btnGenerate">1. Generate Shapes</button>
+        <button id="btnCombine" disabled>2. Combine Selected</button>
+        <a id="btnDownload" class="btn btn-download" style="display:none;">3. Download Composition</a>
+    </div>
+
+    <div class="main-layout">
+        <div class="left-column">
+            <h2>Generated Shapes (Select up to 3)</h2>
+            <div id="gallery" class="gallery"></div>
+        </div>
+
+        <div class="right-column">
+            <h2>Final Composition</h2>
+            <div class="result-container">
+                <canvas id="canvasCombine" style="display:none;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHAPES = ["circle", "rectangle", "triangle", "pentagon", "hexagon", "star", "diamond", "ellipse"];
+        let selectedCanvases = [];
+
+        document.getElementById('btnGenerate').addEventListener('click', generateShapes);
+        document.getElementById('btnCombine').addEventListener('click', combineShapes);
+
+        function randomRGB() {
+            return { r: Math.floor(Math.random() * 256), g: Math.floor(Math.random() * 256), b: Math.floor(Math.random() * 256) };
+        }
+
+        function getContrastColor({r, g, b}) {
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+            return luminance > 128 ? "black" : "white";
+        }
+
+        function generateShapes() {
+            const numImages = parseInt(document.getElementById('numImages').value);
+            const size = parseInt(document.getElementById('size').value);
+            const gallery = document.getElementById('gallery');
+            
+            gallery.innerHTML = '';
+            selectedCanvases = [];
+            document.getElementById('btnCombine').disabled = true;
+            document.getElementById('canvasCombine').style.display = "none";
+            document.getElementById('btnDownload').style.display = "none";
+
+            for (let i = 0; i < numImages; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+                const number = Math.floor(Math.random() * 100);
+                const rgb = randomRGB();
+                
+                ctx.fillStyle = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+                ctx.strokeStyle = ctx.fillStyle;
+                
+                const p = (val) => (val * size) / 200;
+
+                ctx.beginPath();
+                switch (shape) {
+                    case 'circle':
+                        ctx.arc(p(100), p(100), p(70), 0, 2 * Math.PI);
+                        break;
+                    case 'rectangle':
+                        ctx.rect(p(35), p(35), p(130), p(130));
+                        break;
+                    case 'triangle':
+                        ctx.moveTo(p(100), p(25)); ctx.lineTo(p(25), p(165)); ctx.lineTo(p(175), p(165));
+                        break;
+                    case 'pentagon':
+                        ctx.moveTo(p(100), p(25)); ctx.lineTo(p(175), p(80)); ctx.lineTo(p(145), p(165)); ctx.lineTo(p(55), p(165)); ctx.lineTo(p(25), p(80));
+                        break;
+                    case 'hexagon':
+                        ctx.moveTo(p(100), p(25)); ctx.lineTo(p(165), p(65)); ctx.lineTo(p(165), p(135)); ctx.lineTo(p(100), p(175)); ctx.lineTo(p(35), p(135)); ctx.lineTo(p(35), p(65));
+                        break;
+                    case 'star':
+                        const pts = [[100,20],[123,73],[180,77],[137,113],[153,170],[100,137],[47,170],[63,113],[20,77],[77,73]];
+                        ctx.moveTo(p(pts[0][0]), p(pts[0][1]));
+                        pts.slice(1).forEach(pt => ctx.lineTo(p(pt[0]), p(pt[1])));
+                        break;
+                    case 'diamond':
+                        ctx.moveTo(p(100), p(25)); ctx.lineTo(p(175), p(100)); ctx.lineTo(p(100), p(175)); ctx.lineTo(p(25), p(100));
+                        break;
+                    case 'ellipse':
+                        ctx.ellipse(p(100), p(100), p(75), p(55), 0, 0, 2 * Math.PI);
+                        break;
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = getContrastColor(rgb);
+                const fontSize = Math.floor((36 * size) / 200);
+                ctx.font = `bold ${fontSize}px sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(number, p(100), p(100));
+
+                canvas.addEventListener('click', () => toggleSelect(canvas));
+                gallery.appendChild(canvas);
+            }
+        }
+
+        function toggleSelect(canvas) {
+            if (canvas.classList.contains('selected')) {
+                canvas.classList.remove('selected');
+                selectedCanvases = selectedCanvases.filter(c => c !== canvas);
+            } else {
+                if (selectedCanvases.length >= 3) return;
+                canvas.classList.add('selected');
+                selectedCanvases.push(canvas);
+            }
+            document.getElementById('btnCombine').disabled = selectedCanvases.length === 0;
+        }
+
+        function combineShapes() {
+            const imgW = selectedCanvases[0].width;
+            const imgH = selectedCanvases[0].height;
+            
+            const y2 = Math.floor((877 * imgW) / imgH);
+            const y3 = Math.floor((1754 * imgW) / imgH);
+            const totalH = Math.floor((2054 * imgW) / imgH);
+
+            const mainCanvas = document.getElementById('canvasCombine');
+            mainCanvas.width = imgW;
+            mainCanvas.height = totalH;
+            const ctx = mainCanvas.getContext('2d');
+            ctx.clearRect(0, 0, imgW, totalH);
+
+            const img1 = selectedCanvases[0];
+            const img2 = selectedCanvases[1] || img1;
+            const img3 = selectedCanvases[2] || img1;
+
+            ctx.drawImage(img1, 0, 0);
+            ctx.drawImage(img2, 0, y2);
+            ctx.drawImage(img3, 0, y3);
+
+            mainCanvas.style.display = "block";
+            
+            const downloadBtn = document.getElementById('btnDownload');
+            downloadBtn.href = mainCanvas.toDataURL("image/png");
+            downloadBtn.download = "composition.png";
+            downloadBtn.style.display = "inline-block";
+        }
+    </script>
+</body>
+</html>
