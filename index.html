@@ -127,7 +127,12 @@
     <div class="controls">
         <label>Amount: <input type="number" id="numImages" value="60" min="1"></label>
         <label>Size (px): <input type="number" id="size" value="100" min="50"></label>
-        <label>Repetitions (n): <input type="number" id="numRepeats" value="5" min="1" max="10"></label>
+        <label>Repetitions (n): <input type="number" id="numRepeats" value="7" min="1" max="10"></label>
+        <label>Label: <select id="labelType">
+            <option value="numeric" selected>Numérico (0–99)</option>
+            <option value="alphanumeric">Alfanumérico (A8, Z99…)</option>
+            <option value="none">Ninguno</option>
+        </select></label>
         <button id="btnGenerate">1. Generate Shapes</button>
         <button id="btnCombine" disabled>2. Combine Selected</button>
         <a id="btnDownload" class="btn btn-download" style="display:none;">3. Download Composition</a>
@@ -185,7 +190,14 @@
                 const ctx = canvas.getContext('2d');
                 
                 const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-                const number = Math.floor(Math.random() * 100);
+                const labelType = document.getElementById('labelType').value;
+                let label = '';
+                if (labelType === 'alphanumeric') {
+                    const letter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                    label = letter + Math.floor(Math.random() * 100);
+                } else if (labelType === 'numeric') {
+                    label = String(Math.floor(Math.random() * 100));
+                }
                 const rgb = randomRGB();
                 
                 ctx.fillStyle = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
@@ -225,12 +237,14 @@
                 ctx.closePath();
                 ctx.fill();
 
-                ctx.fillStyle = getContrastColor(rgb);
-                const fontSize = Math.floor((36 * size) / 200);
-                ctx.font = `bold ${fontSize}px sans-serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(number, p(100), p(100));
+                if (label) {
+                    ctx.fillStyle = getContrastColor(rgb);
+                    const fontSize = Math.floor((36 * size) / 200);
+                    ctx.font = `bold ${fontSize}px sans-serif`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(label, p(100), p(100));
+                }
 
                 canvas.addEventListener('click', () => toggleSelect(canvas));
                 gallery.appendChild(canvas);
@@ -253,14 +267,14 @@
 
         function combineShapes() {
             const nRaw = parseInt(document.getElementById('numRepeats').value);
-            const n = Math.min(10, Math.max(1, isNaN(nRaw) ? 5 : nRaw));
+            const n = Math.min(10, Math.max(1, isNaN(nRaw) ? 7 : nRaw));
 
             const img = selectedCanvases[0];
             const imgW = img.width;
             const imgH = img.height;
 
             // Base height of the margin strip (kept proportional to the A4-margin look of the original).
-            let totalH = Math.floor(2000 * imgW / imgH);
+            let totalH = Math.floor(2400 * imgW / imgH);
 
             // Ensure there's always room for n shapes plus gaps, growing the strip if needed.
             const minGap = Math.max(10, imgH * 0.1);
